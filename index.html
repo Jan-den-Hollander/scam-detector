@@ -1,0 +1,741 @@
+<!--
+================================================================================
+  Shield AI: Scam Detector — Strumento Anti-Truffa (PWA versie)
+  Versie 1.1 — 2026
+================================================================================
+  Copyright (c) 2026 Jan den Hollander
+  Contact: jandenhollander@duck.com
+================================================================================
+-->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shield AI: Scam Detector</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff3b3b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Shield AI">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg:      #0a0c10;
+            --surface: #111318;
+            --surface2:#181c24;
+            --border:  #1f2533;
+            --red:     #ff3b3b;
+            --orange:  #ff7c2a;
+            --amber:   #ffb020;
+            --green:   #22c55e;
+            --text:    #e2e8f0;
+            --muted:   #64748b;
+            --mono:    'Space Mono', monospace;
+            --sans:    'DM Sans', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--sans);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 0 0 80px;
+            overflow-x: hidden;
+        }
+
+        /* scanlines */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+            pointer-events: none; z-index: 9998;
+        }
+
+        /* ══════════════════════════════════
+           CLIPPY-STYLE INSTALL BANNER
+        ══════════════════════════════════ */
+        #install-banner {
+            display: none; /* shown by JS when prompt available */
+            position: fixed;
+            bottom: 20px;
+            right: 16px;
+            z-index: 9000;
+            max-width: 290px;
+            animation: slide-in 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+        }
+        @keyframes slide-in {
+            from { transform: translateY(120px) scale(0.8); opacity: 0; }
+            to   { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .banner-bubble {
+            background: var(--surface2);
+            border: 1px solid var(--red);
+            border-radius: 16px 16px 4px 16px;
+            padding: 14px 16px;
+            box-shadow: 0 8px 32px rgba(255,59,59,0.25), 0 2px 8px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .banner-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px; right: 18px;
+            border: 5px solid transparent;
+            border-top-color: var(--red);
+        }
+        .banner-clippy {
+            font-size: 32px;
+            position: absolute;
+            bottom: -44px; right: 8px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+            animation: bob 2.5s ease-in-out infinite;
+        }
+        @keyframes bob {
+            0%,100% { transform: translateY(0) rotate(-5deg); }
+            50%      { transform: translateY(-5px) rotate(5deg); }
+        }
+        .banner-title {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--red);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .banner-text {
+            font-size: 12px;
+            color: var(--text);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+        .banner-text em { color: var(--muted); font-style: normal; font-size: 11px; }
+        .banner-btns { display: flex; gap: 8px; }
+        .banner-btn-install {
+            flex: 1;
+            background: var(--red);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .banner-btn-install:hover { background: #ff5252; }
+        .banner-btn-dismiss {
+            background: transparent;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .banner-btn-dismiss:hover { border-color: var(--muted); }
+
+        /* iOS fallback banner (shown on Safari) */
+        #ios-banner {
+            display: none;
+            position: fixed;
+            bottom: 20px; right: 16px;
+            z-index: 9000;
+            max-width: 290px;
+            animation: slide-in 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+        }
+
+        /* ══════════════════════════════════
+           FLOATING FAB (always visible when installed)
+        ══════════════════════════════════ */
+        #fab {
+            display: none; /* shown when in standalone mode */
+            position: fixed;
+            bottom: 22px; right: 18px;
+            z-index: 8000;
+            width: 54px; height: 54px;
+            background: linear-gradient(135deg, #ff3b3b, #991b1b);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(255,59,59,0.5);
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            cursor: pointer;
+            animation: pulse-fab 3s ease-in-out infinite;
+            text-decoration: none;
+        }
+        @keyframes pulse-fab {
+            0%,100% { box-shadow: 0 4px 20px rgba(255,59,59,0.5); }
+            50%      { box-shadow: 0 4px 32px rgba(255,59,59,0.8); }
+        }
+
+        /* ══════════════════════════════════
+           INSTALLED BADGE in header
+        ══════════════════════════════════ */
+        #installed-badge {
+            display: none;
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--green);
+            letter-spacing: 0.08em;
+            margin-top: 8px;
+        }
+        #installed-badge span {
+            background: rgba(34,197,94,0.1);
+            border: 1px solid rgba(34,197,94,0.3);
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        /* ══════════════════════════════════
+           REST OF DESIGN (same as v1)
+        ══════════════════════════════════ */
+        body::after {
+            content: none;
+        }
+
+        header {
+            position: relative;
+            text-align: center;
+            padding: 48px 20px 36px;
+            overflow: hidden;
+        }
+        header::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse 60% 80% at 50% 0%, rgba(255,59,59,0.18) 0%, transparent 70%),
+                        linear-gradient(180deg, #0d0f14 0%, var(--bg) 100%);
+        }
+        .header-inner { position: relative; z-index: 1; }
+        .shield-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 72px; height: 72px; border-radius: 18px;
+            background: linear-gradient(135deg, #ff3b3b, #991b1b);
+            font-size: 36px; margin-bottom: 18px;
+            box-shadow: 0 0 40px rgba(255,59,59,0.4), 0 0 80px rgba(255,59,59,0.15);
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+        @keyframes pulse-glow {
+            0%,100% { box-shadow: 0 0 40px rgba(255,59,59,0.4), 0 0 80px rgba(255,59,59,0.15); }
+            50%      { box-shadow: 0 0 60px rgba(255,59,59,0.6), 0 0 100px rgba(255,59,59,0.25); }
+        }
+        h1 {
+            font-family: var(--mono);
+            font-size: clamp(22px, 5vw, 36px);
+            background: linear-gradient(90deg, #ff3b3b, #ff7c2a);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            font-size: 13px; color: var(--muted);
+            letter-spacing: 0.12em; text-transform: uppercase;
+            font-family: var(--mono);
+        }
+
+        .status-bar {
+            display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+            padding: 14px 20px;
+            background: var(--surface);
+            border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+            font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.08em;
+        }
+        .status-dot {
+            display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+            background: var(--green); box-shadow: 0 0 6px var(--green);
+            margin-right: 6px; animation: blink 2s ease-in-out infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        .user-guide { max-width: 820px; margin: 28px auto 0; padding: 0 16px; }
+        .guide-box {
+            background: var(--surface); border: 1px solid var(--border);
+            border-left: 4px solid var(--green); border-radius: 10px;
+            padding: 18px 20px; font-size: 13px; color: #94a3b8; line-height: 1.7;
+        }
+        .guide-box strong { color: var(--text); }
+        .guide-lang { display: flex; gap: 20px; flex-wrap: wrap; }
+        .guide-lang div { flex: 1; min-width: 200px; }
+
+        .nav-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px; max-width: 820px; margin: 28px auto 0; padding: 0 16px;
+        }
+        .nav-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 10px; padding: 14px 16px; text-decoration: none;
+            color: var(--text); transition: border-color 0.2s, transform 0.2s, background 0.2s; display: block;
+        }
+        .nav-card:hover { border-color: var(--red); background: var(--surface2); transform: translateY(-2px); }
+        .nav-card-label { font-family: var(--mono); font-size: 10px; color: var(--red); letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        .nav-card-title { font-weight: 600; font-size: 14px; display: block; margin-bottom: 6px; }
+        .nav-card p { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+        .sections { max-width: 820px; margin: 36px auto 0; padding: 0 16px; display: flex; flex-direction: column; gap: 32px; }
+        section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+        .section-header {
+            display: flex; align-items: center; gap: 14px; padding: 18px 22px;
+            background: var(--surface2); border-bottom: 1px solid var(--border);
+        }
+        .section-icon {
+            font-size: 22px; width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(255,59,59,0.12); border: 1px solid rgba(255,59,59,0.25);
+            border-radius: 10px; flex-shrink: 0;
+        }
+        .section-meta { flex: 1; }
+        .section-number { font-family: var(--mono); font-size: 10px; color: var(--red); letter-spacing: 0.12em; text-transform: uppercase; }
+        h2 { font-size: 16px; font-weight: 600; color: var(--text); margin-top: 2px; }
+        .section-body { padding: 20px 22px; }
+        .explanation {
+            background: rgba(255,176,32,0.07); border: 1px solid rgba(255,176,32,0.2);
+            border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #c49a2a;
+            margin-bottom: 18px; line-height: 1.6;
+        }
+        .explanation strong { color: var(--amber); }
+        .prompt-group { margin-bottom: 16px; }
+        .prompt-group:last-child { margin-bottom: 0; }
+        .copy-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--red); color: white; border: none;
+            padding: 6px 14px; border-radius: 6px;
+            font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+            cursor: pointer; margin-bottom: 8px; transition: background 0.15s;
+        }
+        .copy-btn:hover { background: #ff5252; }
+        .copy-btn:active { background: var(--green); }
+        .prompt-box {
+            background: #0d1117; border: 1px solid var(--border); border-radius: 8px;
+            padding: 14px 16px; font-family: var(--mono); font-size: 10.5px;
+            color: #c9d1d9; white-space: pre-wrap; word-break: break-word; line-height: 1.7;
+        }
+        .back-link {
+            display: inline-block; margin-top: 16px; font-family: var(--mono);
+            font-size: 10px; color: var(--muted); text-decoration: none; letter-spacing: 0.08em;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--red); }
+        .toast {
+            position: fixed; bottom: 24px; left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--green); color: #022c1a;
+            padding: 10px 22px; border-radius: 24px;
+            font-family: var(--mono); font-size: 11px; font-weight: bold; letter-spacing: 0.05em;
+            opacity: 0; transition: opacity 0.2s, transform 0.2s;
+            z-index: 10000; pointer-events: none;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .no-print { text-align: center; padding: 20px 16px 0; }
+        .btn-print {
+            background: transparent; border: 1px solid var(--border); color: var(--muted);
+            padding: 10px 22px; border-radius: 8px; font-family: var(--mono); font-size: 11px;
+            cursor: pointer; transition: border-color 0.2s, color 0.2s;
+        }
+        .btn-print:hover { border-color: var(--green); color: var(--green); }
+        footer { text-align: center; padding: 30px 16px 0; font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+
+        @media print {
+            .no-print, .status-bar, .nav-grid, .copy-btn, .back-link,
+            #install-banner, #ios-banner, #fab { display: none !important; }
+            body { background: white; color: black; }
+            .prompt-box { background: #f5f5f5; color: black; border: 1px solid #ccc; }
+            h1 { -webkit-text-fill-color: black; color: black; }
+        }
+    </style>
+</head>
+<body id="top">
+
+<!-- ── CLIPPY INSTALL BANNER (Android/Desktop Chrome) ── -->
+<div id="install-banner">
+    <div class="banner-bubble">
+        <div class="banner-title">📲 Installeer als app</div>
+        <div class="banner-text">
+            Zet Shield AI op je startscherm — één tik en je bent beschermd!<br>
+            <em>Aggiungi Shield AI alla schermata iniziale — un tocco e sei protetto!</em>
+        </div>
+        <div class="banner-btns">
+            <button class="banner-btn-install" id="btn-install">🛡️ Installeren / Installa</button>
+            <button class="banner-btn-dismiss" id="btn-dismiss">✕</button>
+        </div>
+    </div>
+    <div class="banner-clippy">🤖</div>
+</div>
+
+<!-- ── IOS SAFARI BANNER ── -->
+<div id="ios-banner">
+    <div class="banner-bubble">
+        <div class="banner-title">📲 Voeg toe aan startscherm</div>
+        <div class="banner-text">
+            Tik op <strong>⎋ Delen</strong> onderin Safari, dan <strong>"Zet op beginscherm"</strong>.<br>
+            <em>Tocca <strong>⎋ Condividi</strong> in Safari, poi <strong>"Aggiungi a schermata Home"</strong>.</em>
+        </div>
+        <div class="banner-btns">
+            <button class="banner-btn-dismiss" id="btn-ios-dismiss" style="flex:1">Begrepen / Capito ✓</button>
+        </div>
+    </div>
+    <div class="banner-clippy">🤖</div>
+</div>
+
+<!-- ── HEADER ── -->
+<header>
+    <div class="header-inner">
+        <div class="shield-icon">🛡️</div>
+        <h1>Shield AI: Scam Detector</h1>
+        <p class="subtitle">Anti-fraude prompts &nbsp;·&nbsp; Prompts anti-truffa</p>
+        <div id="installed-badge"><span>✓ Geïnstalleerd als app / Installato come app</span></div>
+    </div>
+</header>
+
+<div class="status-bar">
+    <span><span class="status-dot"></span>SYSTEEM ACTIEF / SISTEMA ATTIVO</span>
+    <span>4 MODULES</span>
+    <span>NL · IT</span>
+    <span id="pwa-status" style="color:var(--muted)">BROWSER MODUS</span>
+</div>
+
+<div class="user-guide">
+    <div class="guide-box">
+        <div class="guide-lang">
+            <div>
+                <strong>🇳🇱 Hoe gebruik je dit?</strong><br>
+                Kopieer een prompt via de rode knop. Plak hem in je AI-app (ChatGPT, Gemini, Claude). Voeg de link of tekst van de verdachte site toe op de plek <span style="color:var(--red);font-family:var(--mono);font-size:11px">[URL/TEKST]</span>.
+            </div>
+            <div>
+                <strong>🇮🇹 Come si usa?</strong><br>
+                Copia un prompt con il pulsante rosso. Incollalo nella tua app IA (ChatGPT, Gemini, Claude). Aggiungi il link o il testo sospetto al posto di <span style="color:var(--red);font-family:var(--mono);font-size:11px">[URL/TESTO]</span>.
+            </div>
+        </div>
+    </div>
+</div>
+
+<nav class="nav-grid">
+    <a href="#optionA" class="nav-card">
+        <span class="nav-card-label">Module A</span>
+        <span class="nav-card-title">Website Doorlichting</span>
+        <p>Laat AI een verdachte site volledig analyseren.<br><em>Analisi completa del sito.</em></p>
+    </a>
+    <a href="#optionB" class="nav-card">
+        <span class="nav-card-label">Module B</span>
+        <span class="nav-card-title">Nep AI-beelden</span>
+        <p>Deepfakes & nep foto's van bekende mensen.<br><em>Deepfake e foto false di personaggi famosi.</em></p>
+    </a>
+    <a href="#optionC" class="nav-card">
+        <span class="nav-card-label">Module C</span>
+        <span class="nav-card-title">Nep Advertentie</span>
+        <p>Analyseer verdachte advertenties.<br><em>Analizza annunci sospetti.</em></p>
+    </a>
+    <a href="#optionD" class="nav-card">
+        <span class="nav-card-label">Module D</span>
+        <span class="nav-card-title">Phishing & Urgentie</span>
+        <p>Herken nep-mails, sms en "win"-berichten.<br><em>Riconosci finte email e SMS urgenti.</em></p>
+    </a>
+</nav>
+
+<div class="no-print">
+    <button class="btn-print" onclick="window.print()">📥 Bewaar als PDF / Salva come PDF</button>
+</div>
+
+<div class="sections">
+
+    <section id="optionA">
+        <div class="section-header">
+            <div class="section-icon">🔍</div>
+            <div class="section-meta">
+                <div class="section-number">Module A · Website Analyse</div>
+                <h2>Website Doorlichting / Analisi del Sito Web</h2>
+            </div>
+        </div>
+        <div class="section-body">
+            <div class="explanation">
+                <strong>NL:</strong> Plak de URL of de volledige tekst van een verdachte website. De AI controleert op KVK/BTW, valse reviews, psychologische drukknopen, onveilige betaling en geeft een eindoordeel.<br>
+                <strong>IT:</strong> Incolla l'URL o il testo di un sito sospetto. L'IA controlla partita IVA, recensioni false, pressione psicologica, pagamento non sicuro e dà un verdetto finale.
+            </div>
+            <div class="prompt-group">
+                <button class="copy-btn" onclick="copyText('pA_nl')">📋 NL Kopieer</button>
+                <div class="prompt-box" id="pA_nl">Analyseer de volgende website grondig op kenmerken van oplichting en misleiding. Ga als volgt te werk:
+
+1. VERTROUWENSSIGNALEN: Zijn er een geldig KVK-nummer, een echt fysiek adres, verifieerbare contactgegevens en een werkende klantenservice? Of zijn dit vage of nep-gegevens?
+
+2. BELOFTEN EN CLAIMS: Welke beloften worden gedaan (snel geld, garanties, gezondheidsclaims)? Zijn deze realistisch of klassieke zwendelretoriek?
+
+3. BEOORDELINGEN EN TESTIMONIALS: Zien de reviews er nep uit? Let op generieke namen, gebrek aan detail, identieke zinsstructuren of extreem hoge scores zonder kritiek.
+
+4. PSYCHOLOGISCHE DRUK: Wordt er gebruik gemaakt van afteltimers, "nog maar 3 beschikbaar", urgentiemeldingen of angst om iets te missen?
+
+5. BETALING EN VEILIGHEID: Wordt er gevraagd om ongebruikelijke betaalmethoden (cadeaubonnen, crypto, bankoverschrijving)? Ontbreekt er een https-verbinding of keurmerk?
+
+6. EINDOORDEEL: Geef een duidelijk oordeel: legitiem, verdacht of hoogstwaarschijnlijk oplichting — en leg uit waarom.
+
+Website URL of tekst: [PLAK HIER DE URL OF TEKST VAN DE SITE]</div>
+            </div>
+            <div class="prompt-group">
+                <button class="copy-btn" onclick="copyText('pA_it')">📋 IT Copia</button>
+                <div class="prompt-box" id="pA_it">Analizza il seguente sito web in modo approfondito per individuare caratteristiche di truffa e inganno. Procedi come segue:
+
+1. SEGNALI DI FIDUCIA: Sono presenti una partita IVA valida, un indirizzo fisico reale, dati di contatto verificabili e un servizio clienti funzionante? Oppure si tratta di dati vaghi o falsi?
+
+2. PROMESSE E AFFERMAZIONI: Quali promesse vengono fatte (soldi facili, garanzie, claim sulla salute)? Sono realistiche o tipica retorica da truffa?
+
+3. RECENSIONI E TESTIMONIANZE: Le recensioni sembrano false? Presta attenzione a nomi generici, mancanza di dettagli, strutture di frase identiche o punteggi altissimi senza alcuna critica.
+
+4. PRESSIONE PSICOLOGICA: Vengono usati timer a conto alla rovescia, messaggi tipo "ne restano solo 3", avvisi di urgenza o la paura di perdere un'occasione?
+
+5. PAGAMENTO E SICUREZZA: Vengono richiesti metodi di pagamento insoliti (buoni regalo, criptovalute, bonifici bancari)? Mancano una connessione https o un sigillo di qualità?
+
+6. VERDETTO FINALE: Dai un giudizio chiaro: legittimo, sospetto o quasi certamente una truffa — e spiega il perché.
+
+URL del sito o testo: [INCOLLA QUI L'URL O IL TESTO DEL SITO]</div>
+            </div>
+            <a href="#top" class="back-link">↑ Terug / Torna su</a>
+        </div>
+    </section>
+
+    <section id="optionB">
+        <div class="section-header">
+            <div class="section-icon">🤖</div>
+            <div class="section-meta">
+                <div class="section-number">Module B · Deepfake & AI-beelden</div>
+                <h2>Nep AI-beelden & Deepfakes / Immagini AI False</h2>
+            </div>
+        </div>
+        <div class="section-body">
+            <div class="explanation">
+                <strong>NL:</strong> Speciaal voor advertenties die bekende Nederlanders (Jeroen Pauw, Chantal Janzen, Linda de Mol…) misbruiken. Beschrijf wat je ziet of plak de advertentietekst.<br>
+                <strong>IT:</strong> Per annunci che usano personaggi famosi italiani. Descrivi ciò che vedi o incolla il testo.
+            </div>
+            <div class="prompt-group">
+                <button class="copy-btn" onclick="copyText('pB_nl')">📋 NL Kopieer</button>
+                <div class="prompt-box" id="pB_nl">Ik ben een advertentie tegengekomen waarbij een bekende Nederlander schijnbaar een product of investering aanprijst. Analyseer dit op de volgende punten:
+
+1. IS DIT EEN DEEPFAKE? Beschrijf welke visuele of auditieve kenmerken typisch zijn voor AI-gegenereerde beelden of stemmen: onnatuurlijke oogbewegingen, vage randen rondom het gezicht, lip-sync problemen, te perfecte of vreemde huid, een monotone of robotachtige stem.
+
+2. HEEFT DEZE PERSOON DIT WERKELIJK GEZEGD? Bekende Nederlanders worden voortdurend misbruikt in nep-advertenties. Hoe kun je controleren of een celebrity een product echt heeft aanbevolen (officiële kanalen, persberichten, website van de persoon zelf)?
+
+3. DE INHOUD VAN DE ADVERTENTIE: Welke beloften worden gedaan? Zijn dit realistische claims of klassieke oplichtersleugens zoals "verdubbel je geld in een week" of "dé doorbraak die artsen verbergen"?
+
+4. WAT MOET IK DOEN? Hoe meld ik deze advertentie, bij welke instantie (ACM, Fraudehelpdesk 0800-1234, platform zelf), en hoe bescherm ik mezelf en anderen?
+
+Beschrijving of tekst: [BESCHRIJF HIER DE ADVERTENTIE OF PLAK DE TEKST]</div>
+            </div>
+            <div class="prompt-group">
+                <button class="copy-btn" onclick="copyText('pB_it')">📋 IT Copia</button>
+                <div class="prompt-box" id="pB_it">Ho trovato una pubblicità in cui un personaggio famoso italiano sembra promuovere un prodotto o un investimento. Analizza i seguenti punti:
+
+1. È UN DEEPFAKE? Descrivi quali caratteristiche visive o audio sono tipiche delle immagini generate dall'IA: movimenti degli occhi innaturali, bordi sfumati intorno al viso, problemi di sincronizzazione labiale, pelle troppo perfetta, voce monotona o robotica.
+
+2. QUESTA PERSONA HA DETTO DAVVERO QUESTO? Come verifichi se una celebrity ha davvero raccomandato un prodotto (canali ufficiali, comunicati stampa, sito web della persona)?
+
+3. IL CONTENUTO: Quali promesse vengono fatte? Si tratta di affermazioni realistiche o bugie tipiche come "raddoppia i tuoi soldi in una settimana" o "la svolta che i medici nascondono"?
+
+4. COSA FARE? Come segnalo questa pubblicità (Polizia Postale, AGCM, piattaforma stessa) e come proteggo me stesso e gli altri?
+
+Descrizione o testo: [DESCRIVI QUI LA PUBBLICITÀ O INCOLLA IL TESTO]</div>
+            </div>
+            <a href="#top" class="back-link">↑ Terug / Torna su</a>
+        </div>
+    </section>
+
+    <section id="optionC">
+        <div class="section-header">
+            <div class="section-icon">📢</div>
+            <div class="section-meta">
+                <div class="section-number">Module C · Nep Advertentie & Nepnieuws</div>
+                <h2>Nep Advertentie Ontmaskerd / Annuncio Falso Smascherato</h2>
+            </div>
+        </div>
+        <div class="section-body">
+            <div class="explanation">
+                <strong>NL:</strong> Voor verdachte advertenties op sociale media, nep-nieuwsartikelen die producten promoten, of berichten die zich voordoen als officieel nieuws.<br>
+                <strong>IT:</strong> Per annunci sospetti sui social, falsi articoli di notizie che promuovono prodotti, o messaggi che si spacciano per notizie ufficiali.
+            </div>
+            <div class="prompt-group">
+                <button class="copy-btn" onclick="copyText('pC_nl')">📋 NL Kopieer</button>
+                <div class="prompt-box" id="pC_nl">Analyseer de volgende advertentie of het volgende bericht kritisch. Dit lijkt zich voor te doen als nieuws, een aanbeveling of officiële informatie. Onderzoek het volgende:
+
+1. VERMOMMING: Doet de advertentie zich voor als nieuwsartikel, "exclusieve onthulling" of aanbeveling van een expert? Beschrijf hoe de misleiding in elkaar zit.
+
+2. TAALTRUCS: Welke emotionele of manipulatieve taal wordt gebruikt? Let op overdreven uitroeptekens, clichés als "wat ze je niet willen vertellen", "geheime methode" of "artsen zijn verbaasd".
+
+3. CONTROLEER DE BRON: Hoe herken je dat een schijnbaar officieel logo, nieuwsnaam of instelling nep is? (kleine spelfouten in domeinnaam, nep-logo's, ontbrekende contactgegevens)
+
+4. HET ECHTE DOEL: Wat is het werkelijke doel? Persoonlijke gegevens stelen? Een product verkopen dat niet werkt? Geld aftroggelen?
+
+5. RODE VLAGGEN: Noem de drie belangrijkste alarmsignalen in dit bericht.
+
+Tekst of beschrijving: [PLAK HIER DE TEKST OF BESCHRIJF DE ADVERTENTIE]</div>
+            </div>
+            <div class="prompt-group">
+                <button class="copy-btn" onclick="copyText('pC_it')">📋 IT Copia</button>
+                <div class="prompt-box" id="pC_it">Analizza criticamente il seguente annuncio o messaggio. Sembra presentarsi come notizia, raccomandazione o informazione ufficiale. Indaga i seguenti aspetti:
+
+1. IL TRAVESTIMENTO: L'annuncio si spaccia per un articolo di notizie, una "rivelazione esclusiva" o una raccomandazione di un esperto? Descrivi come funziona l'inganno.
+
+2. TRUCCHI LINGUISTICI: Che linguaggio emotivo o manipolativo viene usato? Frasi cliché come "quello che non vogliono che tu sappia", "metodo segreto" o "i medici sono sbalorditi"?
+
+3. VERIFICA LA FONTE: Come si riconosce un logo ufficiale, nome di testata o istituzione falsa? (errori ortografici nel dominio, loghi falsi, dati di contatto mancanti)
+
+4. IL VERO SCOPO: Rubare dati personali? Vendere un prodotto che non funziona? Estorcere denaro?
+
+5. SEGNALI D'ALLARME: Elenca i tre principali segnali d'allarme in questo messaggio.
+
+Testo o descrizione: [INCOLLA QUI IL TESTO O DESCRIVI LA PUBBLICITÀ]</div>
+            </div>
+            <a href="#top" class="back-link">↑ Terug / Torna su</a>
+        </div>
+    </section>
+
+    <section id="optionD">
+        <div class="section-header">
+            <div class="section-icon">⚠️</div>
+            <div class="section-meta">
+                <div class="section-number">Module D · Phishing & Urgentieberichten</div>
+                <h2>Phishing & Valse Urgentie / Phishing e Falsa Urgenza</h2>
+            </div>
+        </div>
+        <div class="section-body">
+            <div class="explanation">
+                <strong>NL:</strong> Voor verdachte e-mails, sms, WhatsApp of pop-ups die beweren dat je iets gewonnen hebt, dat je account geblokkeerd is, of dat je urgent moet handelen.<br>
+                <strong>IT:</strong> Per email sospette, SMS, WhatsApp o pop-up che affermano che hai vinto qualcosa, il tuo account è bloccato, o che devi agire urgentemente.
+            </div>
+            <div class="prompt-group">
+                <button class="copy-btn" onclick="copyText('pD_nl')">📋 NL Kopieer</button>
+                <div class="prompt-box" id="pD_nl">Ik heb het volgende bericht ontvangen en wil weten of het nep is. Analyseer het op alle klassieke phishing- en oplichterssignalen:
+
+1. DE AFZENDER: Is het e-mailadres of telefoonnummer verdacht? Phishing gebruikt adressen als "service@ing-bank-veilig.com" in plaats van "@ing.nl". Hoe herken je het echte afzenderadres?
+
+2. DE URGENTIETACTIEK: Wordt er druk uitgeoefend met "Uw account wordt binnen 24 uur geblokkeerd", "Onmiddellijk actie vereist" of "U heeft gewonnen — claim nu"? Waarom doen oplichters dit?
+
+3. LINKS EN BIJLAGEN: Hoe herken je een nep-link? Wat is het verschil tussen een echte URL van een bank en een namaakversie? Hoe gevaarlijk zijn bijlagen?
+
+4. GEVRAAGDE INFORMATIE: Vraagt het bericht om wachtwoorden, pincode, BSN of bankgegevens? Legitieme instellingen doen dit nooit per mail of sms.
+
+5. WAT NU? Niet klikken, niet antwoorden. Meld bij Fraudehelpdesk (0800-1234) of de bank zelf. Eventueel aangifte doen.
+
+Het bericht: [PLAK HIER DE VOLLEDIGE TEKST VAN HET BERICHT]</div>
+            </div>
+            <div class="prompt-group">
+                <button class="copy-btn" onclick="copyText('pD_it')">📋 IT Copia</button>
+                <div class="prompt-box" id="pD_it">Ho ricevuto il seguente messaggio e voglio sapere se è falso. Analizzalo per tutti i classici segnali di phishing e truffa:
+
+1. IL MITTENTE: L'indirizzo email o il numero è sospetto? Le email di phishing usano indirizzi come "servizio@intesa-sicura.com" invece di "@intesasanpaolo.it". Come si riconosce il mittente reale?
+
+2. LA TATTICA DELL'URGENZA: Frasi come "Il tuo account verrà bloccato entro 24 ore", "Azione immediata richiesta" o "Hai vinto — richiedi ora"? Perché i truffatori lo fanno?
+
+3. LINK E ALLEGATI: Come si riconosce un link falso? Differenza tra URL reale e contraffatto. Pericolo degli allegati con malware.
+
+4. INFORMAZIONI RICHIESTE: Il messaggio chiede password, PIN, codice fiscale o dati bancari? Le istituzioni legittime non chiedono MAI queste cose via email o SMS.
+
+5. COSA FARE? Non cliccare, non rispondere. Segnalare alla Polizia Postale (commissariatodips.it) o alla propria banca. Se necessario, sporgere denuncia.
+
+Il messaggio: [INCOLLA QUI IL TESTO COMPLETO DEL MESSAGGIO]</div>
+            </div>
+            <a href="#top" class="back-link">↑ Terug / Torna su</a>
+        </div>
+    </section>
+
+</div>
+
+<footer>
+    <p>&copy; 2026 Jan den Hollander &nbsp;·&nbsp; Shield AI: Scam Detector &nbsp;·&nbsp; jandenhollander@duck.com</p>
+</footer>
+
+<div id="toast" class="toast">✓ Gekopieerd! / Copiato!</div>
+
+<script>
+// ── Copy functie ──
+function copyText(id) {
+    var text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text).then(function() {
+        var t = document.getElementById('toast');
+        t.classList.add('show');
+        setTimeout(function(){ t.classList.remove('show'); }, 2200);
+    });
+}
+
+// ── Service Worker registratie ──
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js')
+            .then(function(reg) { console.log('SW registered:', reg.scope); })
+            .catch(function(err) { console.log('SW failed:', err); });
+    });
+}
+
+// ── PWA detectie: standalone modus? ──
+var isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                || window.navigator.standalone === true;
+
+if (isStandalone) {
+    // Al geïnstalleerd als app
+    document.getElementById('installed-badge').style.display = 'block';
+    document.getElementById('pwa-status').textContent = '✓ APP MODUS';
+    document.getElementById('pwa-status').style.color = 'var(--green)';
+    var fab = document.getElementById('fab');
+    fab.style.display = 'flex';
+}
+
+// ── Android/Desktop: beforeinstallprompt ──
+var deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // Toon banner alleen als niet al eerder weggedrukt
+    if (!localStorage.getItem('shield-banner-dismissed')) {
+        document.getElementById('install-banner').style.display = 'block';
+    }
+});
+
+document.getElementById('btn-install').addEventListener('click', function() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(result) {
+            if (result.outcome === 'accepted') {
+                document.getElementById('install-banner').style.display = 'none';
+            }
+            deferredPrompt = null;
+        });
+    }
+});
+
+document.getElementById('btn-dismiss').addEventListener('click', function() {
+    document.getElementById('install-banner').style.display = 'none';
+    localStorage.setItem('shield-banner-dismissed', '1');
+});
+
+// ── iOS Safari detectie ──
+var isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+if (isIos && isSafari && !isStandalone && !localStorage.getItem('shield-ios-dismissed')) {
+    setTimeout(function() {
+        document.getElementById('ios-banner').style.display = 'block';
+    }, 1500);
+}
+
+document.getElementById('btn-ios-dismiss').addEventListener('click', function() {
+    document.getElementById('ios-banner').style.display = 'none';
+    localStorage.setItem('shield-ios-dismissed', '1');
+});
+
+// ── Installatie voltooid ──
+window.addEventListener('appinstalled', function() {
+    document.getElementById('install-banner').style.display = 'none';
+    document.getElementById('installed-badge').style.display = 'block';
+    document.getElementById('pwa-status').textContent = '✓ APP GEÏNSTALLEERD';
+    document.getElementById('pwa-status').style.color = 'var(--green)';
+});
+</script>
+
+</body>
+</html>
