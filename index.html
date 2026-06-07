@@ -16,7 +16,7 @@
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ff3b3b">
+    <meta name="theme-color" content="#1c2b3a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Shield AI">
@@ -28,13 +28,13 @@
 
     <style>
         :root {
-            --bg:      #0a0c10;
-            --surface: #111318;
-            --surface2:#181c24;
-            --border:  #1f2533;
-            --red:     #ff3b3b;
-            --orange:  #ff7c2a;
-            --amber:   #ffb020;
+            --bg:      #1c2b3a;
+            --surface: #243447;
+            --surface2:#2d3f52;
+            --border:  #3a5068;
+            --red:     #f97316;
+            --orange:  #f97316;
+            --amber:   #fb923c;
             --green:   #22c55e;
             --text:    #e2e8f0;
             --muted:   #64748b;
@@ -78,7 +78,7 @@
         }
         .banner-bubble {
             background: var(--surface2);
-            border: 1px solid var(--red);
+            border: 1px solid #f97316;
             border-radius: 16px 16px 4px 16px;
             padding: 14px 16px;
             box-shadow: 0 8px 32px rgba(255,59,59,0.25), 0 2px 8px rgba(0,0,0,0.5);
@@ -89,7 +89,7 @@
             position: absolute;
             bottom: -10px; right: 18px;
             border: 5px solid transparent;
-            border-top-color: var(--red);
+            border-top-color: #f97316;
         }
         .banner-clippy {
             font-size: 32px;
@@ -132,7 +132,7 @@
             cursor: pointer;
             transition: background 0.15s;
         }
-        .banner-btn-install:hover { background: #ff5252; }
+        .banner-btn-install:hover { background: #fb923c; }
         .banner-btn-dismiss {
             background: transparent;
             color: var(--muted);
@@ -164,7 +164,7 @@
             bottom: 22px; right: 18px;
             z-index: 8000;
             width: 54px; height: 54px;
-            background: linear-gradient(135deg, #ff3b3b, #991b1b);
+            background: linear-gradient(135deg, #f97316, #c2410c);
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(255,59,59,0.5);
             align-items: center;
@@ -175,8 +175,8 @@
             text-decoration: none;
         }
         @keyframes pulse-fab {
-            0%,100% { box-shadow: 0 4px 20px rgba(255,59,59,0.5); }
-            50%      { box-shadow: 0 4px 32px rgba(255,59,59,0.8); }
+            0%,100% { box-shadow: 0 4px 20px rgba(249,115,22,0.5); }
+            50%      { box-shadow: 0 4px 32px rgba(249,115,22,0.8); }
         }
 
         /* ══════════════════════════════════
@@ -213,26 +213,26 @@
         header::before {
             content: '';
             position: absolute; inset: 0;
-            background: radial-gradient(ellipse 60% 80% at 50% 0%, rgba(255,59,59,0.18) 0%, transparent 70%),
+            background: radial-gradient(ellipse 60% 80% at 50% 0%, rgba(249,115,22,0.18) 0%, transparent 70%),
                         linear-gradient(180deg, #0d0f14 0%, var(--bg) 100%);
         }
         .header-inner { position: relative; z-index: 1; }
         .shield-icon {
             display: inline-flex; align-items: center; justify-content: center;
             width: 72px; height: 72px; border-radius: 18px;
-            background: linear-gradient(135deg, #ff3b3b, #991b1b);
+            background: linear-gradient(135deg, #f97316, #c2410c);
             font-size: 36px; margin-bottom: 18px;
             box-shadow: 0 0 40px rgba(255,59,59,0.4), 0 0 80px rgba(255,59,59,0.15);
             animation: pulse-glow 3s ease-in-out infinite;
         }
         @keyframes pulse-glow {
-            0%,100% { box-shadow: 0 0 40px rgba(255,59,59,0.4), 0 0 80px rgba(255,59,59,0.15); }
-            50%      { box-shadow: 0 0 60px rgba(255,59,59,0.6), 0 0 100px rgba(255,59,59,0.25); }
+            0%,100% { box-shadow: 0 0 40px rgba(249,115,22,0.4), 0 0 80px rgba(249,115,22,0.15); }
+            50%      { box-shadow: 0 0 60px rgba(249,115,22,0.6), 0 0 100px rgba(249,115,22,0.25); }
         }
         h1 {
             font-family: var(--mono);
             font-size: clamp(22px, 5vw, 36px);
-            background: linear-gradient(90deg, #ff3b3b, #ff7c2a);
+            background: linear-gradient(90deg, #f97316, #fb923c);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
             margin-bottom: 8px;
         }
@@ -289,7 +289,7 @@
         .section-icon {
             font-size: 22px; width: 44px; height: 44px;
             display: flex; align-items: center; justify-content: center;
-            background: rgba(255,59,59,0.12); border: 1px solid rgba(255,59,59,0.25);
+            background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.25);
             border-radius: 10px; flex-shrink: 0;
         }
         .section-meta { flex: 1; }
@@ -311,10 +311,10 @@
             font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
             cursor: pointer; margin-bottom: 8px; transition: background 0.15s;
         }
-        .copy-btn:hover { background: #ff5252; }
+        .copy-btn:hover { background: #fb923c; }
         .copy-btn:active { background: var(--green); }
         .prompt-box {
-            background: #0d1117; border: 1px solid var(--border); border-radius: 8px;
+            background: #141e2a; border: 1px solid var(--border); border-radius: 8px;
             padding: 14px 16px; font-family: var(--mono); font-size: 10.5px;
             color: #c9d1d9; white-space: pre-wrap; word-break: break-word; line-height: 1.7;
         }
