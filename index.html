@@ -319,6 +319,19 @@
         .copy-btn:hover { background: var(--orange2); box-shadow: 0 4px 12px rgba(232,98,10,0.4); }
         .copy-btn:active { background: var(--green); }
 
+        .share-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: var(--blue2); color: white; border: none;
+            padding: 7px 16px; border-radius: 7px;
+            font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+            cursor: pointer; margin-bottom: 8px; margin-left: 6px;
+            transition: background 0.15s, box-shadow 0.15s;
+            box-shadow: 0 2px 6px rgba(37,99,168,0.3);
+        }
+        .share-btn:hover { background: var(--blue); box-shadow: 0 4px 12px rgba(37,99,168,0.4); }
+        .share-btn:active { background: var(--green); }
+        .share-btn.hidden { display: none; }
+
         .prompt-box {
             background: #f7fafc;
             border: 1px solid var(--border);
@@ -484,7 +497,7 @@
                 <strong>IT:</strong> Incolla l'URL o il testo di un sito sospetto. L'IA controlla partita IVA, recensioni false, pressione psicologica, pagamento non sicuro e dà un verdetto finale.
             </div>
             <div class="prompt-group">
-                <button class="copy-btn" onclick="copyText('pA_nl')">📋 NL Kopieer</button>
+                <button class="copy-btn" onclick="copyText('pA_nl')">🇳🇱 Kopieer</button><button class="share-btn" onclick="shareText('pA_nl')">🇳🇱 Deel</button>
                 <div class="prompt-box" id="pA_nl">Analyseer de volgende website grondig op kenmerken van oplichting en misleiding. Ga als volgt te werk:
 
 1. VERTROUWENSSIGNALEN: Zijn er een geldig KVK-nummer, een echt fysiek adres, verifieerbare contactgegevens en een werkende klantenservice? Of zijn dit vage of nep-gegevens?
@@ -502,7 +515,7 @@
 Website URL of tekst: [PLAK HIER DE URL OF TEKST VAN DE SITE]</div>
             </div>
             <div class="prompt-group">
-                <button class="copy-btn" onclick="copyText('pA_it')">📋 IT Copia</button>
+                <button class="copy-btn" onclick="copyText('pA_it')">🇮🇹 Copia</button><button class="share-btn" onclick="shareText('pA_it')">🇮🇹 Condividi</button>
                 <div class="prompt-box" id="pA_it">Analizza il seguente sito web in modo approfondito per individuare caratteristiche di truffa e inganno. Procedi come segue:
 
 1. SEGNALI DI FIDUCIA: Sono presenti una partita IVA valida, un indirizzo fisico reale, dati di contatto verificabili e un servizio clienti funzionante? Oppure si tratta di dati vaghi o falsi?
@@ -537,7 +550,7 @@ URL del sito o testo: [INCOLLA QUI L'URL O IL TESTO DEL SITO]</div>
                 <strong>IT:</strong> Per annunci che usano personaggi famosi italiani. Descrivi ciò che vedi o incolla il testo.
             </div>
             <div class="prompt-group">
-                <button class="copy-btn" onclick="copyText('pB_nl')">📋 NL Kopieer</button>
+                <button class="copy-btn" onclick="copyText('pB_nl')">🇳🇱 Kopieer</button><button class="share-btn" onclick="shareText('pB_nl')">🇳🇱 Deel</button>
                 <div class="prompt-box" id="pB_nl">Ik ben een advertentie tegengekomen waarbij een bekende Nederlander schijnbaar een product of investering aanprijst. Analyseer dit op de volgende punten:
 
 1. IS DIT EEN DEEPFAKE? Beschrijf welke visuele of auditieve kenmerken typisch zijn voor AI-gegenereerde beelden of stemmen: onnatuurlijke oogbewegingen, vage randen rondom het gezicht, lip-sync problemen, te perfecte of vreemde huid, een monotone of robotachtige stem.
@@ -551,7 +564,7 @@ URL del sito o testo: [INCOLLA QUI L'URL O IL TESTO DEL SITO]</div>
 Beschrijving of tekst: [BESCHRIJF HIER DE ADVERTENTIE OF PLAK DE TEKST]</div>
             </div>
             <div class="prompt-group">
-                <button class="copy-btn" onclick="copyText('pB_it')">📋 IT Copia</button>
+                <button class="copy-btn" onclick="copyText('pB_it')">🇮🇹 Copia</button><button class="share-btn" onclick="shareText('pB_it')">🇮🇹 Condividi</button>
                 <div class="prompt-box" id="pB_it">Ho trovato una pubblicità in cui un personaggio famoso italiano sembra promuovere un prodotto o un investimento. Analizza i seguenti punti:
 
 1. È UN DEEPFAKE? Descrivi quali caratteristiche visive o audio sono tipiche delle immagini generate dall'IA: movimenti degli occhi innaturali, bordi sfumati intorno al viso, problemi di sincronizzazione labiale, pelle troppo perfetta, voce monotona o robotica.
@@ -582,7 +595,7 @@ Descrizione o testo: [DESCRIVI QUI LA PUBBLICITÀ O INCOLLA IL TESTO]</div>
                 <strong>IT:</strong> Per annunci sospetti sui social, falsi articoli di notizie che promuovono prodotti, o messaggi che si spacciano per notizie ufficiali.
             </div>
             <div class="prompt-group">
-                <button class="copy-btn" onclick="copyText('pC_nl')">📋 NL Kopieer</button>
+                <button class="copy-btn" onclick="copyText('pC_nl')">🇳🇱 Kopieer</button><button class="share-btn" onclick="shareText('pC_nl')">🇳🇱 Deel</button>
                 <div class="prompt-box" id="pC_nl">Analyseer de volgende advertentie of het volgende bericht kritisch. Dit lijkt zich voor te doen als nieuws, een aanbeveling of officiële informatie. Onderzoek het volgende:
 
 1. VERMOMMING: Doet de advertentie zich voor als nieuwsartikel, "exclusieve onthulling" of aanbeveling van een expert? Beschrijf hoe de misleiding in elkaar zit.
@@ -598,7 +611,7 @@ Descrizione o testo: [DESCRIVI QUI LA PUBBLICITÀ O INCOLLA IL TESTO]</div>
 Tekst of beschrijving: [PLAK HIER DE TEKST OF BESCHRIJF DE ADVERTENTIE]</div>
             </div>
             <div class="prompt-group">
-                <button class="copy-btn" onclick="copyText('pC_it')">📋 IT Copia</button>
+                <button class="copy-btn" onclick="copyText('pC_it')">🇮🇹 Copia</button><button class="share-btn" onclick="shareText('pC_it')">🇮🇹 Condividi</button>
                 <div class="prompt-box" id="pC_it">Analizza criticamente il seguente annuncio o messaggio. Sembra presentarsi come notizia, raccomandazione o informazione ufficiale. Indaga i seguenti aspetti:
 
 1. IL TRAVESTIMENTO: L'annuncio si spaccia per un articolo di notizie, una "rivelazione esclusiva" o una raccomandazione di un esperto? Descrivi come funziona l'inganno.
@@ -631,7 +644,7 @@ Testo o descrizione: [INCOLLA QUI IL TESTO O DESCRIVI LA PUBBLICITÀ]</div>
                 <strong>IT:</strong> Per email sospette, SMS, WhatsApp o pop-up che affermano che hai vinto qualcosa, il tuo account è bloccato, o che devi agire urgentemente.
             </div>
             <div class="prompt-group">
-                <button class="copy-btn" onclick="copyText('pD_nl')">📋 NL Kopieer</button>
+                <button class="copy-btn" onclick="copyText('pD_nl')">🇳🇱 Kopieer</button><button class="share-btn" onclick="shareText('pD_nl')">🇳🇱 Deel</button>
                 <div class="prompt-box" id="pD_nl">Ik heb het volgende bericht ontvangen en wil weten of het nep is. Analyseer het op alle klassieke phishing- en oplichterssignalen:
 
 1. DE AFZENDER: Is het e-mailadres of telefoonnummer verdacht? Phishing gebruikt adressen als "service@ing-bank-veilig.com" in plaats van "@ing.nl". Hoe herken je het echte afzenderadres?
@@ -647,7 +660,7 @@ Testo o descrizione: [INCOLLA QUI IL TESTO O DESCRIVI LA PUBBLICITÀ]</div>
 Het bericht: [PLAK HIER DE VOLLEDIGE TEKST VAN HET BERICHT]</div>
             </div>
             <div class="prompt-group">
-                <button class="copy-btn" onclick="copyText('pD_it')">📋 IT Copia</button>
+                <button class="copy-btn" onclick="copyText('pD_it')">🇮🇹 Copia</button><button class="share-btn" onclick="shareText('pD_it')">🇮🇹 Condividi</button>
                 <div class="prompt-box" id="pD_it">Ho ricevuto il seguente messaggio e voglio sapere se è falso. Analizzalo per tutti i classici segnali di phishing e truffa:
 
 1. IL MITTENTE: L'indirizzo email o il numero è sospetto? Le email di phishing usano indirizzi come "servizio@intesa-sicura.com" invece di "@intesasanpaolo.it". Come si riconosce il mittente reale?
@@ -682,6 +695,37 @@ function copyText(id) {
         var t = document.getElementById('toast');
         t.classList.add('show');
         setTimeout(function(){ t.classList.remove('show'); }, 2200);
+    });
+}
+
+// ── Share functie ──
+function shareText(id) {
+    var text = document.getElementById(id).innerText;
+    if (navigator.share) {
+        navigator.share({
+            title: 'Shield AI: Scam Detector',
+            text: text
+        }).catch(function() {});
+    } else {
+        // Geen Web Share API (desktop) — kopieer als fallback
+        navigator.clipboard.writeText(text).then(function() {
+            var t = document.getElementById('toast');
+            t.textContent = '✓ Gekopieerd (deel niet beschikbaar op dit apparaat)';
+            t.classList.add('show');
+            setTimeout(function(){
+                t.classList.remove('show');
+                t.textContent = '✓ Gekopieerd! / Copiato!';
+            }, 3000);
+        });
+    }
+}
+
+// ── Verberg deelknoppen op desktop zonder Web Share ──
+if (!navigator.share && !('ontouchstart' in window)) {
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.share-btn').forEach(function(btn) {
+            btn.classList.add('hidden');
+        });
     });
 }
 
