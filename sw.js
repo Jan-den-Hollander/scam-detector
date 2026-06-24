@@ -1,7 +1,7 @@
 // Shield AI: Scam Detector — Service Worker
-// Versie 1.0 — Jan den Hollander@duck.com 
+// Versie 1.0 — Jan den Hollander
 
-const CACHE_NAME = 'shield-ai-v1';
+const CACHE_NAME = 'shield-ai-v2';
 const ASSETS = [
   './',
   './index.html',
